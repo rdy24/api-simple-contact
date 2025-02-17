@@ -3,7 +3,7 @@
 .gitignore
 
 # app build result
-api-contact-form
+api-contact
 
 # OS generated files
 .DS_Store
