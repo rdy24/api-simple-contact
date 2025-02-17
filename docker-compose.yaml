@@ -1,0 +1,72 @@
+services:
+  # MariaDB Service
+  mariadb-contact:
+    image: mariadb:latest
+    container_name: mariadb-contact
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    # ports:
+    #   - "${HOST_MARIADB_PORT}:${CONT_MARIADB_PORT}"
+    volumes:
+      - mariadb-contact-data:/var/lib/mysql
+    networks:
+      - contact-network-database
+      
+  # PHPMyAdmin Service
+  phpmyadmin-contact:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin-contact
+    restart: on-failure
+    environment:
+      - PMA_HOST=mariadb-contact
+      - PMA_PORT=${CONT_MARIADB_PORT}
+    env_file:
+      - .env
+    ports:
+      - "${HOST_PHPMYADMIN_PORT}:${CONT_PHPMYADMIN_PORT}"
+    depends_on:
+      - mariadb-contact
+    networks:
+      - contact-network-database
+
+  # API Contact Form Service
+  api-contact:
+    build: .
+    image: api-contact:1.0.0
+    container_name: api-contact
+    restart: on-failure
+    depends_on:
+      - mariadb-contact
+    env_file:
+      - .env
+    ports:
+      - "${HOST_API_PORT}:${CONT_API_PORT}"
+    environment:
+      - APP_PORT=${CONT_API_PORT}
+      - APP_TIMEZONE=Asia/Jakarta
+      - DB_HOST=mariadb-contact
+      - DB_PORT=${CONT_MARIADB_PORT}
+      - DB_USER=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${MYSQL_DATABASE}
+      - CORS_ALLOWED_ORIGINS=http://localhost:8081,http://localhost:8082,http://cms-contact:8081,http://client-contact:8082
+      - CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+      - CORS_ALLOWED_HEADERS=Origin,Content-Type,Accept,Authorization
+      - CORS_ALLOW_CREDENTIALS=true
+      - CORS_EXPOSE_HEADERS=Content-Length,Content-Type
+    networks:
+      - contact-network-database
+  
+
+volumes:
+  mariadb-contact-data:
+
+networks:
+  contact-network-database:
+    driver: bridge
